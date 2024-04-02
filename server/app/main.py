@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Depends
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import FastAPI
 from .routers import auth, rooms, message
+from app.database.database import db
 
 app = FastAPI()
 

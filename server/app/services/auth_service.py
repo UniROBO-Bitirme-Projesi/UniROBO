@@ -2,10 +2,6 @@ import firebase_admin
 from firebase_admin import credentials, auth
 from ..schemas.user_schema import SignUpData
 
-# Firebase Admin SDK başlatılıyor.
-cred = credentials.Certificate("firebase_key.json")
-firebase_admin.initialize_app(cred)
-
 def create_user(sign_up_data: SignUpData):
     user_record = auth.create_user(
         email=sign_up_data.email,

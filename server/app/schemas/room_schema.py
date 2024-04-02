@@ -3,9 +3,20 @@ from typing import Optional, List
 from datetime import datetime
 
 class RoomData(BaseModel):
-    room_name: str = Field(..., description="Sohbet odasının adı.")
+    room_name: str
 
+class MessageData(BaseModel):
+    sender_id: str
+    content: str
+
+class MessageResponse(BaseModel):
+    message_id: str
+    sender_id: str
+    content: str
+    sent_at: datetime
+    
+    
 class ChatRoomResponse(BaseModel):
-    room_id: str = Field(..., description="Sohbet odasının benzersiz kimliği.")
-    room_name: str = Field(..., description="Sohbet odasının adı.")
-    created_at: Optional[datetime] = Field(None, description="Sohbet odasının oluşturulma zamanı.")
+    room_id: str
+    room_name: str
+    created_at: datetime
