@@ -10,3 +10,6 @@ app.include_router(message.router, prefix="/api/v1")
 
 
 # deneme
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
