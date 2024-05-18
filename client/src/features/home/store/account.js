@@ -61,21 +61,8 @@ export const checkAccount = createAsyncThunk(
 const accountSlice = createSlice({
   name: 'account',
   initialState,
-  reducers: {
-    addAccount: (state, action) => {
-      state.data.push(action.payload.data);
-      action.payload.callback();
-    },
-    deleteAccount: (state, action) => {
-      state.data = state.data.filter((account) => account.name != action.payload);
-    },
-    deleteAllAccount: (state, action) => {
-      state.data = [];
-    },
-  },
-  extraReducers: {},
+  reducers: {}
 });
 
-export const { addAccount, deleteAccount, deleteAllAccount } = accountSlice.actions;
 
 export default accountSlice.reducer;

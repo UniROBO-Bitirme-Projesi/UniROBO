@@ -1,14 +1,13 @@
 import React from 'react';
-import { Text, View } from 'react-native';
-import Layout from '../../../../components/layout-auth';
+import { SafeAreaView, Text, View } from 'react-native';
 
 const Dashboard = ({ navigation }) => {
   return (
-    <Layout>
+    <SafeAreaView style={{ flex: 1 }}>
       <View>
-      <Text style={{ color: 'red' }}>Dashboard</Text>
+        <Text style={{ color: 'red' }}>Dashboard</Text>
       </View>
-    </Layout>
+    </SafeAreaView>
   );
 };
 

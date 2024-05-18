@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View, TextInput, Alert } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import * as NavigationPaths from '../../../../navigation/routes';
 import { Icon } from '../../../../assets/icon';
 import { useAuth } from '../../../../../AuthContext';
+import firebase from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 import * as Yup from 'yup';
 import style from './styles';
 
 
-const Login = ({ navigation }) => {
+const Register = ({ navigation }) => {
   const [hidePassword, setHidePassword] = useState(true);
+  const [checkbox, setCheckbox] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ name: '', email: '', password: '' });
 
   const [_, setAuth] = useAuth();
 
@@ -27,20 +29,24 @@ const Login = ({ navigation }) => {
       .validate({ email, password }, { abortEarly: false })
       .then(() => {
         auth()
-          .signInWithEmailAndPassword(email, password)
+          .createUserWithEmailAndPassword(email, password)
           .then(() => {
+            const user = firebase.auth().currentUser;
+            user.updateProfile({
+              displayName: name,
+            });
             setAuth(true);
           })
           .catch((error) => {
-            if (error.code === 'auth/wrong-password') {
-              alert('Wrong Password');
-              return;
+            if (error.code === 'auth/email-already-in-use') {
+              Alert.alert('Bu email adresi kullanımda!');
+            } else if (error.code === 'auth/weak-password') {
+              Alert.alert('Şifren çok kısa!');
+            } else if (error.code === 'auth/invalid-email') {
+              Alert.alert('E-posta adresin geçersiz!');
+            } else {
+              console.error(error);
             }
-            if (error.code === 'auth/user-not-found') {
-              alert('User Not Found');
-              return;
-            }
-            console.error(error);
           });
       })
       .catch((err) => {
@@ -79,21 +85,28 @@ const Login = ({ navigation }) => {
           backgroundColor: 'white',
           justifyContent: 'center',
           flex: 1,
-          flexDirection: 'column',
           paddingVertical: 50,
           alignItems: 'center',
         }}
       >
         <View style={{ alignItems: 'center' }}>
-          <Text style={style.hero}>Tekrar Hoşgeldin!</Text>
-          <Text style={style.hero_description}>Devam etmek için oturum açın</Text>
+          <Text style={style.hero}>Hoşgeldiniz!</Text>
+          <Text style={style.hero_description}>Lütfen kayıt bilgilerinizi giriniz</Text>
         </View>
         <View style={style.form}>
           <TextInput
+            value={name}
+            placeholder="İsim"
+            onChangeText={setName}
+            placeholderTextColor="#302D4C"
+            style={style.input}
+          />
+          {errors.name && <Text style={style.error}>{errors.name}</Text>}
+          <TextInput
             value={email}
-            onChangeText={setEmail}
             placeholder="Email"
             keyboardType="email-address"
+            onChangeText={setEmail}
             placeholderTextColor="#302D4C"
             style={style.input}
           />
@@ -111,25 +124,35 @@ const Login = ({ navigation }) => {
               onPress={() => setHidePassword(!hidePassword)}
               style={{ position: 'absolute', right: 15, top: 15 }}
             ></TouchableOpacity>
+            {errors.password && <Text style={style.error}>{errors.password}</Text>}
           </View>
-          {errors.password && <Text style={style.error}>{errors.password}</Text>}
-          <TouchableOpacity style={style.forgot}>
-            <Text>Şifremi Unuttum</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleSubmit} style={style.button}>
-            <Text style={style.button_text}>Giriş Yap</Text>
+          <View style={style.checkbox_area}>
+            <TouchableOpacity onPress={() => setCheckbox(!checkbox)} style={style.checkbox}>
+              {checkbox && <Text style={{ fontSize: 25 }}>✓</Text>}
+            </TouchableOpacity>
+            <View style={{ marginLeft: 10, flex: 1, flexWrap: 'nowrap' }}>
+              <Text style={style.checkbox_text}>
+                Bu hesabı oluşturarak bilgilerimin KVKK kapsamında işlenmesini kabul ediyorum
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            disabled={!email || !password}
+            onPress={handleSubmit}
+            style={style.button}
+          >
+            <Text style={style.button_text}>Hesabımı Oluştur</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleGoogleSignIn} style={[style.button, style.googleButton]}>
             <Icon.Google />
-            <Text style={style.googleButtonText}>Google ile Oturum Aç</Text>
+            <Text style={style.googleButtonText}>Google ile Kayıt Ol</Text>
           </TouchableOpacity>
 
           <View style={style.bottom}>
-            <Text style={{ fontSize: 17, color: '#302D4C' }}>Hesabınız yok mu? - </Text>
-            <TouchableOpacity onPress={() => navigation.navigate(NavigationPaths.REGISTER)}>
-              <Text style={{ fontSize: 17, fontWeight: '600', color: '#302D4C' }}>Kayıt Ol</Text>
+            <Text style={{ fontSize: 17, color: '#302D4C' }}>Zaten hesabın var mı? - </Text>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={{ fontSize: 17, fontWeight: '600', color: '#302D4C' }}>Oturum Aç</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -138,4 +161,4 @@ const Login = ({ navigation }) => {
   );
 };
 
-export default Login;
+export default Register;

@@ -2,6 +2,7 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import {
   persistStore,
+  persistReducer,
   FLUSH,
   REHYDRATE,
   PAUSE,
@@ -9,16 +10,22 @@ import {
   PURGE,
   REGISTER,
 } from 'redux-persist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import account from '../features/home/store/account';
-import user from '../features/home/store/user';
 import createDebugger from 'redux-flipper';
 import thunk from 'redux-thunk';
 
+
+const persistConfig = {
+  key: 'root',
+  storage: AsyncStorage,
+};
+
 const rootReducer = combineReducers({
   account: account,
-  user: user,
 });
 
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 const middlewares = [thunk];
 
 if (__DEV__) {
@@ -27,7 +34,7 @@ if (__DEV__) {
 }
 
 const store = configureStore({
-  reducer: rootReducer,
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
