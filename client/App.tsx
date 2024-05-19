@@ -3,12 +3,11 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { store, persistor } from './src/store';
+import AppConfig from './src/helpers/app-config';
 import Navigation from './src/navigation';
 import './src/localization/lang';
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import AppConfig from './src/helpers/app-config';
-
 
 GoogleSignin.configure({
   webClientId: AppConfig.GOOGLE_WEB_CLIENT_ID,

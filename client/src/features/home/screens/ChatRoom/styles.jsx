@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   chatList: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     backgroundColor: '#FFFFFF',
   },
   chatEmpty: {
