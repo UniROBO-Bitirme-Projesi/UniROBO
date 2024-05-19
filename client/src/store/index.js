@@ -11,10 +11,9 @@ import {
   REGISTER,
 } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import account from '../features/home/store/account';
-import createDebugger from 'redux-flipper';
 import thunk from 'redux-thunk';
 
+import dashboard from '../features/home/store/dashboard';
 
 const persistConfig = {
   key: 'root',
@@ -22,12 +21,12 @@ const persistConfig = {
 };
 
 const rootReducer = combineReducers({
-  account: account,
+  dashboard,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
-const middlewares = [thunk];
 
+const middlewares = [thunk];
 if (__DEV__) {
   const createDebugger = require('redux-flipper').default;
   middlewares.push(createDebugger());

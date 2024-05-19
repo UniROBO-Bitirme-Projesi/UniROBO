@@ -8,7 +8,6 @@ import auth from '@react-native-firebase/auth';
 import * as Yup from 'yup';
 import style from './styles';
 
-
 const Login = ({ navigation }) => {
   const [hidePassword, setHidePassword] = useState(true);
   const [email, setEmail] = useState('');
@@ -109,8 +108,10 @@ const Login = ({ navigation }) => {
             />
             <TouchableOpacity
               onPress={() => setHidePassword(!hidePassword)}
-              style={{ position: 'absolute', right: 15, top: 15 }}
-            ></TouchableOpacity>
+              style={{ position: 'absolute', right: 15, top: 20 }}
+            >
+              {hidePassword ? <Icon.EyeOn color="black" /> : <Icon.EyeOff color="black" />}
+            </TouchableOpacity>
           </View>
           {errors.password && <Text style={style.error}>{errors.password}</Text>}
           <TouchableOpacity style={style.forgot}>
