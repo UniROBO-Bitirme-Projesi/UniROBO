@@ -1,13 +1,156 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { Icon } from '../../../../assets/icon';
+import { getChat } from '../../store/dashboard';
+import { styles } from './styles';
 
-const ChatRoom = ({ navigation }) => {
-  return (
-    <Layout>
-      <View>
-        <Text style={{ color: 'red' }}>ChatRoom</Text>
+const categories = [
+  {
+    id: '1',
+    title: 'Açıkla',
+    icon: <Icon.Desc />,
+    questions: ['Kuantum Fiziğini Açıkla', 'Solucan delikleri nedir?'],
+  },
+  {
+    id: '2',
+    title: 'Üret & Düzenle',
+    icon: <Icon.Edit />,
+    questions: [
+      'Küresel ısınma hakkında makale yaz',
+      'Çiçekler ve aşk hakkında bir şiir yaz',
+      'Programlama hakkında bir rap şarkısı yaz',
+    ],
+  },
+  {
+    id: '3',
+    title: 'Çeviri',
+    icon: <Icon.Translate />,
+    questions: ['Korece ´bugün nasılsın´ nasıl söylenir?'],
+  },
+];
+
+const ChatRoom = ({ route, navigation }) => {
+  const { roomId } = route.params;
+  const dispatch = useDispatch();
+  const { chat } = useSelector((state) => state.dashboard);
+  const { data: chatData, loading, error } = chat;
+  const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (roomId) {
+      dispatch(getChat({ roomId }));
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    console.log('Room ID:', roomId);
+    console.log('Chat Data:', chatData);
+  }, [chatData]);
+
+  const handleSend = () => {
+    // Send message logic here
+    setText('');
+  };
+
+  const renderItem = ({ item, index }) => {
+    const isMyMessage = index % 2 === 1;
+    return (
+      <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
+        <Text style={styles.chatMessage}>{item.content}</Text>
       </View>
-    </Layout>
+    );
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <View
+        style={{
+          height: 52,
+          marginBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: '#ECECEC',
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          backgroundColor: '#FFFFFF',
+          alignItems: 'center',
+          paddingHorizontal: 30,
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon.ArrowLeft color="#292D32" />
+        </TouchableOpacity>
+        <View>
+          <Icon.Chat />
+        </View>
+        <View>
+          <Icon.Export />
+        </View>
+      </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
+      >
+        {chatData.length === 0 ? (
+          <FlatList
+            data={categories}
+            renderItem={({ item }) => (
+              <View style={styles.categoryContainer}>
+                <View style={styles.categoryHeader}>
+                  {item.icon}
+                  <Text style={styles.categoryTitle}>{item.title}</Text>
+                </View>
+                <FlatList
+                  data={item.questions}
+                  renderItem={({ item: question }) => (
+                    <TouchableOpacity
+                      onPress={() => setText(question)}
+                      style={styles.exampleMessageItem}
+                    >
+                      <Text style={styles.exampleMessageText}>{question}</Text>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item}
+                  contentContainerStyle={styles.exampleMessageList}
+                />
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.chatEmpty}
+          />
+        ) : (
+          <FlatList
+            inverted
+            data={chatData}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.chatList}
+          />
+        )}
+        <View style={styles.inputArea}>
+          <TextInput
+            value={text}
+            onChangeText={(text) => setText(text)}
+            placeholder="Yazınız..."
+            style={styles.input}
+          />
+          <TouchableOpacity onPress={handleSend}>
+            <Icon.Send />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

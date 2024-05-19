@@ -8,7 +8,6 @@ import auth from '@react-native-firebase/auth';
 import * as Yup from 'yup';
 import style from './styles';
 
-
 const Register = ({ navigation }) => {
   const [hidePassword, setHidePassword] = useState(true);
   const [checkbox, setCheckbox] = useState(false);
@@ -122,8 +121,10 @@ const Register = ({ navigation }) => {
             />
             <TouchableOpacity
               onPress={() => setHidePassword(!hidePassword)}
-              style={{ position: 'absolute', right: 15, top: 15 }}
-            ></TouchableOpacity>
+              style={{ position: 'absolute', right: 15, top: 20 }}
+            >
+              {hidePassword ? <Icon.EyeOn color="black" /> : <Icon.EyeOff color="black" />}
+            </TouchableOpacity>
             {errors.password && <Text style={style.error}>{errors.password}</Text>}
           </View>
           <View style={style.checkbox_area}>
