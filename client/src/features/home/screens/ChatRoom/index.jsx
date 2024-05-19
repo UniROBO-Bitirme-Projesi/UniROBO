@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,62 +8,58 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '../../../../assets/icon';
 import { getChat } from '../../store/dashboard';
 import { styles } from './styles';
-
-const categories = [
-  {
-    id: '1',
-    title: 'Açıkla',
-    icon: <Icon.Desc />,
-    questions: ['Kuantum Fiziğini Açıkla', 'Solucan delikleri nedir?'],
-  },
-  {
-    id: '2',
-    title: 'Üret & Düzenle',
-    icon: <Icon.Edit />,
-    questions: [
-      'Küresel ısınma hakkında makale yaz',
-      'Çiçekler ve aşk hakkında bir şiir yaz',
-      'Programlama hakkında bir rap şarkısı yaz',
-    ],
-  },
-  {
-    id: '3',
-    title: 'Çeviri',
-    icon: <Icon.Translate />,
-    questions: ['Korece ´bugün nasılsın´ nasıl söylenir?'],
-  },
-];
+import auth from '@react-native-firebase/auth';
+import { WebSocket } from 'ws';
 
 const ChatRoom = ({ route, navigation }) => {
-  const { roomId } = route.params;
+  const { roomId } = route?.params || '';
   const dispatch = useDispatch();
   const { chat } = useSelector((state) => state.dashboard);
   const { data: chatData, loading, error } = chat;
   const [text, setText] = useState('');
+  const ws = useRef(null);
 
   useEffect(() => {
     if (roomId) {
       dispatch(getChat({ roomId }));
+      ws.current = new WebSocket(`wss://unirobo-production.up.railway.app/ws/${roomId}`);
+      ws.current.onmessage = (e) => {
+        const newMessage = JSON.parse(e.data);
+        dispatch({ type: 'ADD_MESSAGE', payload: newMessage });
+      };
+      ws.current.onerror = (e) => {
+        console.error('WebSocket Error: ', e.message);
+      };
+      ws.current.onclose = (e) => {
+        console.log('WebSocket closed: ', e.reason);
+      };
+      return () => {
+        if (ws.current) {
+          ws.current.close();
+        }
+      };
     }
   }, [roomId]);
 
-  useEffect(() => {
-    console.log('Room ID:', roomId);
-    console.log('Chat Data:', chatData);
-  }, [chatData]);
-
   const handleSend = () => {
-    // Send message logic here
-    setText('');
+    const currentUser = auth().currentUser.uid;
+    if (ws.current && text.trim().length > 0) {
+      const message = { roomId, sender_id: currentUser, content: text };
+      ws.current.send(JSON.stringify(message));
+      setText('');
+    }
   };
 
   const renderItem = ({ item, index }) => {
-    const isMyMessage = index % 2 === 1;
+    const currentUser = auth().currentUser.uid;
+    const isMyMessage = item.sender_id === currentUser;
+
     return (
       <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
         <Text style={styles.chatMessage}>{item.content}</Text>
@@ -102,42 +98,13 @@ const ChatRoom = ({ route, navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
       >
-        {chatData.length === 0 ? (
-          <FlatList
-            data={categories}
-            renderItem={({ item }) => (
-              <View style={styles.categoryContainer}>
-                <View style={styles.categoryHeader}>
-                  {item.icon}
-                  <Text style={styles.categoryTitle}>{item.title}</Text>
-                </View>
-                <FlatList
-                  data={item.questions}
-                  renderItem={({ item: question }) => (
-                    <TouchableOpacity
-                      onPress={() => setText(question)}
-                      style={styles.exampleMessageItem}
-                    >
-                      <Text style={styles.exampleMessageText}>{question}</Text>
-                    </TouchableOpacity>
-                  )}
-                  keyExtractor={(item) => item}
-                  contentContainerStyle={styles.exampleMessageList}
-                />
-              </View>
-            )}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.chatEmpty}
-          />
-        ) : (
-          <FlatList
-            inverted
-            data={chatData}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.chatList}
-          />
-        )}
+        <FlatList
+          inverted
+          data={chatData}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.chatList}
+        />
         <View style={styles.inputArea}>
           <TextInput
             value={text}

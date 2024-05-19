@@ -27,7 +27,7 @@ export const getRoom = createAsyncThunk(
 );
 
 export const getChat = createAsyncThunk(
-  'dashboard/list-chat',
+  'chat/list-chat',
   async ({ roomId }, { rejectWithValue }) => {
     try {
       const response = await request.get(`rooms/room-messages/${roomId}`);
@@ -38,11 +38,46 @@ export const getChat = createAsyncThunk(
   },
 );
 
+export const sendMessage = createAsyncThunk(
+  'chat/send-message',
+  async ({ roomId, content, sender_id }, { rejectWithValue }) => {
+    try {
+      const response = await request.post(`rooms/send-message/${roomId}`,
+        {
+          sender_id: sender_id,
+          content: content
+        }
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch room details');
+    }
+  },
+);
+
+export const createRoom = createAsyncThunk(
+  'dashboard/create-room',
+  async ({ roomName, callback }, { rejectWithValue }) => {
+    try {
+      const response = await request.post(`rooms/create-room`, {
+        room_name: roomName
+      });
+      callback(response.data)
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch room details');
+    }
+  },
+);
 
 const dashboardSlice = createSlice({
   name: 'dashboard',
   initialState,
-  reducers: {},
+  reducers: {
+    setChat: (state) => {
+      state.chat.data = [];
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getRoom.pending, (state) => {
@@ -72,4 +107,5 @@ const dashboardSlice = createSlice({
   },
 });
 
+export const { setChat } = dashboardSlice.actions;
 export default dashboardSlice.reducer;
