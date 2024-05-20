@@ -48,12 +48,12 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.container}>
         <FlatList
           data={roomsData}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleRoomPress(item.room_id)} style={styles.roomItem}>
-              <Text style={styles.roomName}>{item.room_name}</Text>
+          renderItem={({ item, index }) => (
+            <TouchableOpacity key={index} onPress={() => handleRoomPress(item.room_id)} style={styles.roomItem}>
+              <Text key={index} style={styles.roomName}>{item.room_name}</Text>
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.key}
+          keyExtractor={(item) => item.room_id.toString()} 
           contentContainerStyle={styles.roomList}
         />
         <TouchableOpacity
