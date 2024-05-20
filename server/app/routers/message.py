@@ -66,24 +66,24 @@ async def get_room_messages(room_id: str):
     return messages
 
 @router.post("/send-message/{room_id}", response_model=MessageResponse)
-async def send_message(room_id: str, message_data: MessageData = Body(...)):
+async def send_message(room_id: str, message_data: MessageData = Body(...), from_chatgpt=False):
     message_ref = db.collection("rooms").document(room_id).collection("messages").add({
         "sender_id": message_data.sender_id,
         "content": message_data.content,
         "sent_at": firestore.SERVER_TIMESTAMP
     })
-    # Broadcast the message to all connected clients in the room
     message_id = message_ref[1].id
     new_message = {"message_id": message_id, **message_data.dict()}
     await manager.broadcast(room_id, new_message)
 
-    # If the sender is not ChatGPT, generate a response
-    if message_data.sender_id != "ChatGPT":
+    # Only generate a response if the message is not from ChatGPT
+    if not from_chatgpt and message_data.sender_id != "ChatGPT":
         response = await get_chatgpt_response(message_data.content)
         chatgpt_message_data = MessageData(sender_id="ChatGPT", content=response)
-        await send_message(room_id, chatgpt_message_data)
+        await send_message(room_id, chatgpt_message_data, from_chatgpt=True)
 
     return new_message
+
 
 async def get_chatgpt_response(message: str) -> str:
     response = openai.Completion.create(
