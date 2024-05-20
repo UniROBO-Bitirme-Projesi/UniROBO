@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Body, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 from google.cloud import firestore
+import socketio
 from ..schemas.message_schema import MessageResponse, MessageData
 from app.database.database import db
 import openai
-import asyncio
+
+# Create a new Socket.IO server
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+app = socketio.ASGIApp(sio)
 
 router = APIRouter(
     prefix="/messages",
@@ -16,41 +20,44 @@ router = APIRouter(
 # OpenAI API Key
 openai.api_key = "sk-proj-G9fGsSKh5w5VDUXk6Nw2T3BlbkFJMY7pYGOTpmqV3fsDsd6V"
 
-connected_clients = {}
-
-class WebSocketConnectionManager:
+class MessageConnectionManager:
     def __init__(self):
-        self.active_connections: dict[str, List[WebSocket]] = {}
+        self.active_rooms: dict[str, List[str]] = {}
 
-    async def connect(self, room_id: str, websocket: WebSocket):
-        await websocket.accept()
-        if room_id not in self.active_connections:
-            self.active_connections[room_id] = []
-        self.active_connections[room_id].append(websocket)
+    async def connect(self, sid, room_id):
+        await sio.save_session(sid, {'room_id': room_id})
+        sio.enter_room(sid, room_id)
+        if room_id not in self.active_rooms:
+            self.active_rooms[room_id] = []
+        self.active_rooms[room_id].append(sid)
 
-    def disconnect(self, room_id: str, websocket: WebSocket):
-        self.active_connections[room_id].remove(websocket)
-        if not self.active_connections[room_id]:
-            del self.active_connections[room_id]
-
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
+    async def disconnect(self, sid):
+        session = await sio.get_session(sid)
+        room_id = session.get('room_id')
+        sio.leave_room(sid, room_id)
+        self.active_rooms[room_id].remove(sid)
+        if not self.active_rooms[room_id]:
+            del self.active_rooms[room_id]
 
     async def broadcast(self, room_id: str, message: str):
-        for connection in self.active_connections.get(room_id, []):
-            await connection.send_text(message)
+        await sio.emit('message', message, room=room_id)
 
-manager = WebSocketConnectionManager()
+manager = MessageConnectionManager()
 
-@router.websocket("/ws/{room_id}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str):
-    await manager.connect(room_id, websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.broadcast(room_id, data)
-    except WebSocketDisconnect:
-        manager.disconnect(room_id, websocket)
+@sio.event
+async def connect(sid, environ, auth):
+    room_id = auth.get('room_id')
+    await manager.connect(sid, room_id)
+    await sio.emit('status', {'message': 'Connected'}, room=sid)
+
+@sio.event
+async def chat_message(sid, data):
+    room_id = await sio.get_session(sid)['room_id']
+    await manager.broadcast(room_id, data)
+
+@sio.event
+async def disconnect(sid):
+    await manager.disconnect(sid)
 
 @router.get("/room-messages/{room_id}", response_model=List[MessageResponse])
 async def get_room_messages(room_id: str):
@@ -65,7 +72,6 @@ async def send_message(room_id: str, message_data: MessageData = Body(...)):
         "content": message_data.content,
         "sent_at": firestore.SERVER_TIMESTAMP
     })
-    
     # Broadcast the message to all connected clients in the room
     message_id = message_ref[1].id
     new_message = {"message_id": message_id, **message_data.dict()}
