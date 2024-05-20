@@ -8,14 +8,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '../../../../assets/icon';
-import { getChat } from '../../store/dashboard';
-import { styles } from './styles';
 import auth from '@react-native-firebase/auth';
-import { WebSocket } from 'ws';
+import io from 'socket.io-client';
 
 const ChatRoom = ({ route, navigation }) => {
   const { roomId } = route?.params || '';
@@ -23,43 +20,48 @@ const ChatRoom = ({ route, navigation }) => {
   const { chat } = useSelector((state) => state.dashboard);
   const { data: chatData, loading, error } = chat;
   const [text, setText] = useState('');
-  const ws = useRef(null);
+  const socket = useRef(null);
 
   useEffect(() => {
     if (roomId) {
-      dispatch(getChat({ roomId }));
-      ws.current = new WebSocket(`wss://unirobo-production.up.railway.app/ws/${roomId}`);
-      ws.current.onmessage = (e) => {
-        const newMessage = JSON.parse(e.data);
-        dispatch({ type: 'ADD_MESSAGE', payload: newMessage });
-      };
-      ws.current.onerror = (e) => {
-        console.error('WebSocket Error: ', e.message);
-      };
-      ws.current.onclose = (e) => {
-        console.log('WebSocket closed: ', e.reason);
-      };
-      return () => {
-        if (ws.current) {
-          ws.current.close();
-        }
-      };
+      socket.current = io(`https://unirobo-production.up.railway.app/ws/${roomId}`);
+
+      socket.current.on('connect', () => {
+        console.log('Socket.IO connected');
+      });
+
+      socket.current.on('message', (newMessage) => {
+        console.log('Received message:', newMessage);
+      });
+
+      socket.current.on('error', (error) => {
+        console.error('Socket.IO Error:', error);
+      });
+
+      socket.current.on('disconnect', () => {
+        console.log('Socket.IO disconnected');
+      });
     }
+
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
   }, [roomId]);
 
   const handleSend = () => {
     const currentUser = auth().currentUser.uid;
-    if (ws.current && text.trim().length > 0) {
+    if (socket.current && text.trim().length > 0) {
       const message = { roomId, sender_id: currentUser, content: text };
-      ws.current.send(JSON.stringify(message));
+      socket.current.emit('message', message);
       setText('');
     }
   };
 
-  const renderItem = ({ item, index }) => {
+  const renderItem = ({ item }) => {
     const currentUser = auth().currentUser.uid;
     const isMyMessage = item.sender_id === currentUser;
-
     return (
       <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
         <Text style={styles.chatMessage}>{item.content}</Text>
@@ -69,20 +71,7 @@ const ChatRoom = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <View
-        style={{
-          height: 52,
-          marginBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: '#ECECEC',
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          backgroundColor: '#FFFFFF',
-          alignItems: 'center',
-          paddingHorizontal: 30,
-        }}
-      >
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon.ArrowLeft color="#292D32" />
         </TouchableOpacity>
@@ -109,7 +98,7 @@ const ChatRoom = ({ route, navigation }) => {
           <TextInput
             value={text}
             onChangeText={(text) => setText(text)}
-            placeholder="Yazınız..."
+            placeholder="Type your message..."
             style={styles.input}
           />
           <TouchableOpacity onPress={handleSend}>
