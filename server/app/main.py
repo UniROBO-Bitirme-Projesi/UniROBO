@@ -1,15 +1,14 @@
+# main.py
 from fastapi import FastAPI
-from .routers import auth, rooms, message
-import socketio
+from socketio import AsyncServer, ASGIApp
+from routers import auth, rooms, message
 
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
 
 app = FastAPI()
 
-def startup_event():
-    global app
-    app = socketio.ASGIApp(sio, app)
-    
+socket_app = ASGIApp(sio, app)
+
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(rooms.router, prefix="/api/v1")
 app.include_router(message.router, prefix="/api/v1")
@@ -30,6 +29,7 @@ async def chat_message(sid, data):
 @sio.event
 async def disconnect(sid):
     print('disconnect ', sid)
+
 
 if __name__ == '__main__':
     import uvicorn
