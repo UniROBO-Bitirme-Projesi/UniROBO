@@ -8,10 +8,6 @@ from ..schemas.message_schema import MessageResponse, MessageData
 from app.database.database import db
 import openai
 
-# Create a new Socket.IO server
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
-app = socketio.ASGIApp(sio)
-
 router = APIRouter(
     prefix="/messages",
     tags=["Messages"],

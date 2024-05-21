@@ -24,55 +24,45 @@ const ChatRoom = ({ route, navigation }) => {
   const [messages, setMessages] = useState(chatData || []); // Local state to handle messages if not using Redux for it
   const socket = useRef(null);
 
+  console.log(socket);
   useEffect(() => {
-    if (roomId && !socket.current) {
-      socket.current = io(`https://unirobo-production.up.railway.app/ws/${roomId}`);
+    if (!socket.current) {
+      socket.current = io('https://unirobo-production.up.railway.app', {
+        transports: ['websocket'], // Ensuring WebSocket is used
+        query: { roomId }, // Passing roomId as part of the query
+    });
+    
 
       socket.current.on('connect', () => {
-        console.log('Socket.IO connected');
+        console.log('Connected to socket server');
       });
 
       socket.current.on('message', (newMessage) => {
-        console.log('Received message:', newMessage);
         setMessages((prevMessages) => [...prevMessages, newMessage]);
       });
 
-      socket.current.on('error', (error) => {
-        console.error('Socket.IO Error:', error);
-      });
-
       socket.current.on('disconnect', () => {
-        console.log('Socket.IO disconnected');
+        console.log('Disconnected from socket server');
       });
-    }
 
-    return () => {
-      if (socket.current) {
+      return () => {
         socket.current.disconnect();
-        socket.current = null;
-      }
-    };
+      };
+    }
   }, [roomId]);
 
   const handleSend = () => {
-    const currentUser = auth().currentUser.uid;
-    if (socket.current && text.trim().length > 0) {
-      const message = { roomId, sender_id: currentUser, content: text };
-      socket.current.emit('message', message);
+    if (socket.current && text) {
+      socket.current.emit('message', { roomId, text });
       setText('');
     }
   };
 
-  const renderItem = ({ item }) => {
-    const currentUser = auth().currentUser.uid;
-    const isMyMessage = item.sender_id === currentUser;
-    return (
-      <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
-        <Text style={styles.chatMessage}>{item.content}</Text>
-      </View>
-    );
-  };
-
+  const renderItem = ({ item }) => (
+    <View style={styles.messageContainer}>
+      <Text style={styles.messageText}>{item.text}</Text>
+    </View>
+  );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View
