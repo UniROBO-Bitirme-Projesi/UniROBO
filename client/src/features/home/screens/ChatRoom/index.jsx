@@ -21,17 +21,16 @@ const ChatRoom = ({ route, navigation }) => {
   const { chat } = useSelector((state) => state.dashboard);
   const { data: chatData, loading, error } = chat;
   const [text, setText] = useState('');
-  const [messages, setMessages] = useState(chatData || []); // Local state to handle messages if not using Redux for it
+  const [messages, setMessages] = useState(chatData || []);
   const socket = useRef(null);
 
   console.log(socket);
   useEffect(() => {
     if (!socket.current) {
       socket.current = io('https://unirobo-production.up.railway.app', {
-        transports: ['websocket'], // Ensuring WebSocket is used
-        query: { roomId }, // Passing roomId as part of the query
-    });
-    
+        transports: ['websocket'],
+        query: { roomId },
+      });
 
       socket.current.on('connect', () => {
         console.log('Connected to socket server');

@@ -1,12 +1,16 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
+# app/schemas/message_schema.py
+
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 
 class MessageData(BaseModel):
-    content: str = Field(..., description="Mesajın içeriği.")
+    sender_id: str
+    content: str
+    sent_at: Optional[datetime] = None
 
 class MessageResponse(BaseModel):
-    message_id: str = Field(..., description="Mesajın benzersiz kimliği.")
-    sender_id: str = Field(..., description="Mesajı gönderen kullanıcının kimliği.")
-    content: str = Field(..., description="Mesajın içeriği.")
-    sent_at: Optional[datetime] = Field(None, description="Mesajın gönderilme zamanı.")
+    message_id: str
+    sender_id: str
+    content: str
+    sent_at: datetime
