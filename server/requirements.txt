@@ -4,4 +4,4 @@ firebase-admin
 python-dotenv
 pydantic
 openai
-python-socketio
+aiohttp

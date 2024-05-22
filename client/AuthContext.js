@@ -10,7 +10,7 @@ export const useDevice = () => {
   return useContext(DeviceContext);
 };
 const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState(null);
+  const [auth, setAuth] = useState(true);
   const [device, setDevice] = useState(null);
   return (
     <DeviceContext.Provider value={[device, setDevice]}>
