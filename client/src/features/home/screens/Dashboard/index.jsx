@@ -1,15 +1,18 @@
-import React, { useEffect } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, FlatList, Alert } from 'react-native';
-import * as NavigationPaths from '../../../../navigation/routes';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, SafeAreaView, FlatList, Alert, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Swipeable, TapGestureHandler, State } from 'react-native-gesture-handler';
+import * as NavigationPaths from '../../../../navigation/routes';
 import { Icon } from '../../../../assets/icon';
-import { getRoom } from '../../store/dashboard';
+import { deleteRoom, getRoom } from '../../store/dashboard';
 import { styles } from './styles';
 
 const Dashboard = ({ navigation }) => {
   const dispatch = useDispatch();
   const { rooms } = useSelector((state) => state.dashboard);
   const { data: roomsData, loading } = rooms;
+  const swipeableRefs = useRef(new Map());
+  const [isSwiping, setIsSwiping] = useState(false);
 
   useEffect(() => {
     dispatch(getRoom());
@@ -19,11 +22,70 @@ const Dashboard = ({ navigation }) => {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [dispatch]);
 
   const handleRoomPress = (roomId) => {
-    navigation.navigate(NavigationPaths.CHATROOM, { roomId });
+    if (!isSwiping) {
+      navigation.navigate(NavigationPaths.CHATROOM, { roomId });
+    }
   };
+
+  const handleDeleteRoom = async (room_id) => {
+    const swipeable = swipeableRefs.current.get(room_id);
+    if (swipeable) {
+      swipeable.close();
+    }
+    dispatch(
+      deleteRoom({
+        roomId: room_id,
+        callback: () => {
+          dispatch(getRoom());
+        },
+      }),
+    );
+  };
+
+  const renderRightActions = (room_id) => (
+    <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteRoom(room_id)}>
+      <Text style={styles.deleteButtonText}>Delete</Text>
+    </TouchableOpacity>
+  );
+
+  const renderItem = ({ item }) => (
+    <Swipeable
+      ref={(ref) => {
+        if (ref) {
+          swipeableRefs.current.set(item.room_id, ref);
+        } else {
+          swipeableRefs.current.delete(item.room_id);
+        }
+      }}
+      renderRightActions={() => renderRightActions(item.room_id)}
+      onSwipeableWillOpen={() => {
+        setIsSwiping(true);
+        swipeableRefs.current.forEach((ref, key) => {
+          if (key !== item.room_id && ref) {
+            ref.close();
+          }
+        });
+      }}
+      onSwipeableWillClose={() => {
+        setIsSwiping(false);
+      }}
+    >
+      <TapGestureHandler
+        onHandlerStateChange={({ nativeEvent }) => {
+          if (nativeEvent.state === State.ACTIVE) {
+            handleRoomPress(item.room_id);
+          }
+        }}
+      >
+        <View style={styles.roomItem}>
+          <Text style={styles.roomName}>{item.room_name}</Text>
+        </View>
+      </TapGestureHandler>
+    </Swipeable>
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
@@ -41,8 +103,8 @@ const Dashboard = ({ navigation }) => {
           paddingHorizontal: 30,
         }}
       >
-        <TouchableOpacity style={{}}>
-          <Icon.ArrowLeft color="white" />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon.ArrowLeft color="#292D32" />
         </TouchableOpacity>
         <View>
           <Icon.Chat />
@@ -54,17 +116,7 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.container}>
         <FlatList
           data={roomsData}
-          renderItem={({ item, index }) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleRoomPress(item.room_id)}
-              style={styles.roomItem}
-            >
-              <Text key={index} style={styles.roomName}>
-                {item.room_name}
-              </Text>
-            </TouchableOpacity>
-          )}
+          renderItem={renderItem}
           keyExtractor={(item) => item.room_id.toString()}
           contentContainerStyle={styles.roomList}
         />

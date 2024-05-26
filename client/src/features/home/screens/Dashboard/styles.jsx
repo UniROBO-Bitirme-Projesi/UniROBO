@@ -48,6 +48,25 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
+  roomList: {
+    paddingBottom: 100,
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 70,
+    height: '75%',
+    marginHorizontal: 12,
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
+    borderRadius: 12,
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
 
 export { styles };

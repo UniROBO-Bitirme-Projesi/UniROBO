@@ -21,6 +21,15 @@ const request = {
   put: (endPoint, data, header) => {
     return axios.put(`${AppConfig.apiUrl}${endPoint}`, data, header);
   },
+  delete: (endPoint, header) => {
+    return axios.delete(`${AppConfig.apiUrl}${endPoint}`, {
+      headers: {
+        Accept: '*/*',
+        'Content-Type': 'application/json',
+        ...header,
+      },
+    });
+  },
 };
 
 export default request;
