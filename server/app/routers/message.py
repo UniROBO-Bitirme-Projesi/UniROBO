@@ -109,26 +109,3 @@ async def send_message_endpoint(room_id: str, message_data: SendMessageRequest):
         logger.error(f"Error sending message: {e}")
         return JSONResponse(status_code=500, content={"message": "Error sending message"})
 
-@router.get("/stream/{room_id}")
-async def stream_messages(request: Request, room_id: str):
-    async def event_generator():
-        queue = manager.active_rooms.get(room_id)
-        if queue is None:
-            return
-
-        try:
-            while True:
-                message = await queue.get()
-                if message is None:
-                    break
-                yield f"data: {message}\n\n"
-                if await request.is_disconnected():
-                    break
-
-        except asyncio.CancelledError:
-            pass
-        finally:
-            if room_id in manager.active_rooms:
-                del manager.active_rooms[room_id]
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
