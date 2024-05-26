@@ -13,6 +13,12 @@ const Dashboard = ({ navigation }) => {
 
   useEffect(() => {
     dispatch(getRoom());
+
+    const interval = setInterval(() => {
+      dispatch(getRoom());
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleRoomPress = (roomId) => {
@@ -49,11 +55,17 @@ const Dashboard = ({ navigation }) => {
         <FlatList
           data={roomsData}
           renderItem={({ item, index }) => (
-            <TouchableOpacity key={index} onPress={() => handleRoomPress(item.room_id)} style={styles.roomItem}>
-              <Text key={index} style={styles.roomName}>{item.room_name}</Text>
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleRoomPress(item.room_id)}
+              style={styles.roomItem}
+            >
+              <Text key={index} style={styles.roomName}>
+                {item.room_name}
+              </Text>
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.room_id.toString()} 
+          keyExtractor={(item) => item.room_id.toString()}
           contentContainerStyle={styles.roomList}
         />
         <TouchableOpacity

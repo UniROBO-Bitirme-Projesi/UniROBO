@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import {
   View,
   Text,
@@ -43,6 +43,7 @@ const ChatRoom = ({ route, navigation }) => {
   const roomId = route?.params?.roomId;
   const dispatch = useDispatch();
   const flatListRef = useRef(null);
+  const [isAtBottom, setIsAtBottom] = useState(true); // Track if the user is at the bottom
 
   const { chat } = useSelector((state) => state.dashboard);
   const { data: chatData, loading, error } = chat;
@@ -57,16 +58,28 @@ const ChatRoom = ({ route, navigation }) => {
   }, [roomId]);
 
   useEffect(() => {
-    if (chatData && chatData.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: false });
+    if (chatData && chatData.length > 0 && isAtBottom) {
+      flatListRef.current.scrollToEnd({ animated: true });
     }
   }, [chatData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (roomId || newRoom) {
+        dispatch(getChat({ roomId: roomId || newRoom }));
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [roomId, newRoom]);
 
   const handleSend = () => {
     if (roomId || newRoom) {
       if (text.length > 3) {
         dispatch(sendMessage({ roomId: roomId || newRoom, content: text, sender_id: '12' }));
         setText('');
+        setTimeout(() => {
+          dispatch(getChat({ roomId: roomId || newRoom }));
+        }, 500);
       }
     } else {
       dispatch(
@@ -74,22 +87,31 @@ const ChatRoom = ({ route, navigation }) => {
           roomName: text,
           callback: (res) => {
             setNewRoom(res?.room_id);
-            dispatch(sendMessage({ roomId: newRoom, content: text, sender_id: '12' }));
+            dispatch(sendMessage({ roomId: res?.room_id, content: text, sender_id: '12' }));
             setText('');
+            setTimeout(() => {
+              dispatch(getChat({ roomId: res?.room_id }));
+            }, 500);
           },
         }),
       );
     }
   };
 
-  const renderItem = ({ item, index }) => {
-    const isMyMessage = item.sender_id != 'ChatGPT';
+  const handleScroll = (event) => {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const isBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 20;
+    setIsAtBottom(isBottom);
+  };
+
+  const ChatMessage = memo(({ item }) => {
+    const isMyMessage = item.sender_id !== 'ChatGPT';
     return (
       <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
         <Text style={styles.chatMessage}>{item.content}</Text>
       </View>
     );
-  };
+  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
@@ -133,15 +155,16 @@ const ChatRoom = ({ route, navigation }) => {
                 </View>
                 <FlatList
                   data={item.questions}
-                  renderItem={({ item: question }) => (
+                  renderItem={({ item: question, index }) => (
                     <TouchableOpacity
+                      key={index}
                       onPress={() => setText(question)}
                       style={styles.exampleMessageItem}
                     >
                       <Text style={styles.exampleMessageText}>{question}</Text>
                     </TouchableOpacity>
                   )}
-                  keyExtractor={(item) => item}
+                  keyExtractor={(item, index) => index.toString()}
                   contentContainerStyle={styles.exampleMessageList}
                 />
               </View>
@@ -153,10 +176,14 @@ const ChatRoom = ({ route, navigation }) => {
           <FlatList
             ref={flatListRef}
             data={chatData}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ChatMessage item={item} />}
+            keyExtractor={(item) => item.message_id.toString()}
             contentContainerStyle={styles.chatList}
-            onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
+            onScroll={handleScroll}
+            onContentSizeChange={() =>
+              isAtBottom && flatListRef.current.scrollToEnd({ animated: true })
+            }
+            onLayout={() => isAtBottom && flatListRef.current.scrollToEnd({ animated: true })}
           />
         )}
         <View style={styles.inputArea}>
