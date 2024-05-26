@@ -1,11 +1,12 @@
 import React from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AuthProvider, { useAuth } from '../../AuthContext';
 import * as NavigationPaths from './routes';
 import { appRoutes } from './app-navigation';
 import { authRoutes } from './auth-navigation';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const Stack = createNativeStackNavigator();
 
@@ -54,13 +55,15 @@ const AppStackNavigator = () => {
 
 const Navigation = (props) => {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <AuthProvider>
-          <Navigator {...props} />
-        </AuthProvider>
-      </NavigationContainer>
-    </SafeAreaView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <AuthProvider>
+            <Navigator {...props} />
+          </AuthProvider>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 };
 

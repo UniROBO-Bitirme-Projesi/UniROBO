@@ -70,6 +70,22 @@ export const createRoom = createAsyncThunk(
   },
 );
 
+export const deleteRoom = createAsyncThunk(
+  'dashboard/delete-room',
+  async ({ roomId, callback }, { rejectWithValue }) => {
+    try {
+      const response = await request.delete(`rooms/delete-room/${roomId}`,
+        {}
+      );
+      callback(response.data)
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch room details');
+    }
+  },
+);
+
+
 const dashboardSlice = createSlice({
   name: 'dashboard',
   initialState,
