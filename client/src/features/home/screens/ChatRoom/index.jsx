@@ -11,57 +11,86 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '../../../../assets/icon';
-import auth from '@react-native-firebase/auth';
-import io from 'socket.io-client';
+import { createRoom, getChat, sendMessage, setChat } from '../../store/dashboard';
 import { styles } from './styles';
 
+const categories = [
+  {
+    id: '1',
+    title: 'Açıkla',
+    icon: <Icon.Desc />,
+    questions: ['Kuantum Fiziğini Açıkla', 'Solucan delikleri nedir?'],
+  },
+  {
+    id: '2',
+    title: 'Üret & Düzenle',
+    icon: <Icon.Edit />,
+    questions: [
+      'Küresel ısınma hakkında makale yaz',
+      'Çiçekler ve aşk hakkında bir şiir yaz',
+      'Programlama hakkında bir rap şarkısı yaz',
+    ],
+  },
+  {
+    id: '3',
+    title: 'Çeviri',
+    icon: <Icon.Translate />,
+    questions: ['Korece ´bugün nasılsın´ nasıl söylenir?'],
+  },
+];
+
 const ChatRoom = ({ route, navigation }) => {
-  const { roomId } = route?.params || '';
+  const roomId = route?.params?.roomId;
   const dispatch = useDispatch();
+  const flatListRef = useRef(null);
+
   const { chat } = useSelector((state) => state.dashboard);
   const { data: chatData, loading, error } = chat;
+  const [newRoom, setNewRoom] = useState(null);
   const [text, setText] = useState('');
-  const [messages, setMessages] = useState(chatData || []);
-  const socket = useRef(null);
 
-  console.log(socket);
   useEffect(() => {
-    if (!socket.current) {
-      socket.current = io('https://unirobo-production.up.railway.app', {
-        transports: ['websocket'],
-        query: { roomId },
-      });
-
-      socket.current.on('connect', () => {
-        console.log('Connected to socket server');
-      });
-
-      socket.current.on('message', (newMessage) => {
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-      });
-
-      socket.current.on('disconnect', () => {
-        console.log('Disconnected from socket server');
-      });
-
-      return () => {
-        socket.current.disconnect();
-      };
+    dispatch(setChat());
+    if (roomId) {
+      dispatch(getChat({ roomId }));
     }
   }, [roomId]);
 
+  useEffect(() => {
+    if (chatData && chatData.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: false });
+    }
+  }, [chatData]);
+
   const handleSend = () => {
-    if (socket.current && text) {
-      socket.current.emit('message', { roomId, text });
-      setText('');
+    if (roomId || newRoom) {
+      if (text.length > 3) {
+        dispatch(sendMessage({ roomId: roomId || newRoom, content: text, sender_id: '12' }));
+        setText('');
+      }
+    } else {
+      dispatch(
+        createRoom({
+          roomName: text,
+          callback: (res) => {
+            setNewRoom(res?.room_id);
+            dispatch(sendMessage({ roomId: newRoom, content: text, sender_id: '12' }));
+            setText('');
+          },
+        }),
+      );
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.messageContainer}>
-      <Text style={styles.messageText}>{item.text}</Text>
-    </View>
-  );
+  const renderItem = ({ item, index }) => {
+    const isMyMessage = item.sender_id != 'ChatGPT';
+    return (
+      <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
+        <Text style={styles.chatMessage}>{item.content}</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View
@@ -79,7 +108,7 @@ const ChatRoom = ({ route, navigation }) => {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon.ArrowLeft />
+          <Icon.ArrowLeft color="#292D32" />
         </TouchableOpacity>
         <View>
           <Icon.Chat />
@@ -93,18 +122,48 @@ const ChatRoom = ({ route, navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
       >
-        <FlatList
-          inverted
-          data={messages}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.message_id.toString()}
-          contentContainerStyle={styles.chatList}
-        />
+        {chatData && chatData.length === 0 ? (
+          <FlatList
+            data={categories}
+            renderItem={({ item }) => (
+              <View style={styles.categoryContainer}>
+                <View style={styles.categoryHeader}>
+                  {item.icon}
+                  <Text style={styles.categoryTitle}>{item.title}</Text>
+                </View>
+                <FlatList
+                  data={item.questions}
+                  renderItem={({ item: question }) => (
+                    <TouchableOpacity
+                      onPress={() => setText(question)}
+                      style={styles.exampleMessageItem}
+                    >
+                      <Text style={styles.exampleMessageText}>{question}</Text>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item}
+                  contentContainerStyle={styles.exampleMessageList}
+                />
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.chatEmpty}
+          />
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={chatData}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.chatList}
+            onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
+          />
+        )}
         <View style={styles.inputArea}>
           <TextInput
             value={text}
             onChangeText={(text) => setText(text)}
-            placeholder="Type your message..."
+            placeholder="Yazınız..."
             style={styles.input}
           />
           <TouchableOpacity onPress={handleSend}>

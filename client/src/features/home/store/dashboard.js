@@ -42,7 +42,7 @@ export const sendMessage = createAsyncThunk(
   'chat/send-message',
   async ({ roomId, content, sender_id }, { rejectWithValue }) => {
     try {
-      const response = await request.post(`rooms/send-message/${roomId}`,
+      const response = await request.post(`messages/send-message/${roomId}`,
         {
           sender_id: sender_id,
           content: content
