@@ -142,7 +142,7 @@ const ChatRoom = ({ route, navigation }) => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 32}
       >
         {chatData && chatData.length === 0 ? (
           <FlatList

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "276966380707",
+    "project_id": "unirobo-15d07",
+    "storage_bucket": "unirobo-15d07.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:276966380707:android:d83e839dd3e0f9d7365b16",
+        "android_client_info": {
+          "package_name": "com.unirobo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "276966380707-n4c3pptdo366648oq2k3suaddq09mktd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhH4OALOAh8ZxzKBoeLXwbHRQZtymCzoY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "276966380707-n4c3pptdo366648oq2k3suaddq09mktd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "276966380707-tmqmko9r8q1tff92ivjmiplkpfhdhb88.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.UniROBO"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
