@@ -100,12 +100,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   input: {
-    height: 20,
+    height: 40,
     flex: 1,
     backgroundColor: 'white',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     color: 'black',
-    borderRadius: 5,
+    fontSize: 16,
   },
   exampleMessageContainer: {
     flex: 1,
