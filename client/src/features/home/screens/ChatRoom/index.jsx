@@ -12,6 +12,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '../../../../assets/icon';
 import { createRoom, getChat, sendMessage, setChat } from '../../store/dashboard';
+import { firebase } from '@react-native-firebase/auth';
 import { styles } from './styles';
 
 const categories = [
@@ -43,10 +44,11 @@ const ChatRoom = ({ route, navigation }) => {
   const roomId = route?.params?.roomId;
   const dispatch = useDispatch();
   const flatListRef = useRef(null);
-  const [isAtBottom, setIsAtBottom] = useState(true); // Track if the user is at the bottom
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const { chat } = useSelector((state) => state.dashboard);
   const { data: chatData, loading, error } = chat;
+  const user = firebase?.auth()?.currentUser;
   const [newRoom, setNewRoom] = useState(null);
   const [text, setText] = useState('');
 
@@ -75,7 +77,7 @@ const ChatRoom = ({ route, navigation }) => {
   const handleSend = () => {
     if (roomId || newRoom) {
       if (text.length > 3) {
-        dispatch(sendMessage({ roomId: roomId || newRoom, content: text, sender_id: '12' }));
+        dispatch(sendMessage({ roomId: roomId || newRoom, content: text, sender_id: user.uid }));
         setText('');
         setTimeout(() => {
           dispatch(getChat({ roomId: roomId || newRoom }));
@@ -85,9 +87,10 @@ const ChatRoom = ({ route, navigation }) => {
       dispatch(
         createRoom({
           roomName: text,
+          owner_id: user?.uid,
           callback: (res) => {
             setNewRoom(res?.room_id);
-            dispatch(sendMessage({ roomId: res?.room_id, content: text, sender_id: '12' }));
+            dispatch(sendMessage({ roomId: res?.room_id, content: text, sender_id: user.uid }));
             setText('');
             setTimeout(() => {
               dispatch(getChat({ roomId: res?.room_id }));
@@ -105,7 +108,7 @@ const ChatRoom = ({ route, navigation }) => {
   };
 
   const ChatMessage = memo(({ item }) => {
-    const isMyMessage = item.sender_id !== 'ChatGPT';
+    const isMyMessage = item.sender_id === user.uid;
     return (
       <View style={[styles.chatItem, isMyMessage ? styles.myMessage : styles.otherMessage]}>
         <Text style={styles.chatMessage}>{item.content}</Text>
@@ -180,10 +183,16 @@ const ChatRoom = ({ route, navigation }) => {
             keyExtractor={(item) => item.message_id.toString()}
             contentContainerStyle={styles.chatList}
             onScroll={handleScroll}
-            onContentSizeChange={() =>
-              isAtBottom && flatListRef.current.scrollToEnd({ animated: true })
-            }
-            onLayout={() => isAtBottom && flatListRef.current.scrollToEnd({ animated: true })}
+            onContentSizeChange={() => {
+              if (isAtBottom) {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }
+            }}
+            onLayout={() => {
+              if (isAtBottom) {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }
+            }}
           />
         )}
         <View style={styles.inputArea}>
@@ -192,6 +201,7 @@ const ChatRoom = ({ route, navigation }) => {
             onChangeText={(text) => setText(text)}
             placeholder="Yazınız..."
             style={styles.input}
+            placeholderTextColor={"grey"}
           />
           <TouchableOpacity onPress={handleSend}>
             <Icon.Send />

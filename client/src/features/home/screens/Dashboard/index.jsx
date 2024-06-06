@@ -3,8 +3,9 @@ import { View, Text, SafeAreaView, FlatList, Alert, TouchableOpacity } from 'rea
 import { useDispatch, useSelector } from 'react-redux';
 import { Swipeable, TapGestureHandler, State } from 'react-native-gesture-handler';
 import * as NavigationPaths from '../../../../navigation/routes';
-import { Icon } from '../../../../assets/icon';
+import { firebase } from '@react-native-firebase/auth';
 import { deleteRoom, getRoom } from '../../store/dashboard';
+import { Icon } from '../../../../assets/icon';
 import { styles } from './styles';
 
 const Dashboard = ({ navigation }) => {
@@ -14,11 +15,13 @@ const Dashboard = ({ navigation }) => {
   const swipeableRefs = useRef(new Map());
   const [isSwiping, setIsSwiping] = useState(false);
 
+  const user = firebase?.auth()?.currentUser;
+
   useEffect(() => {
-    dispatch(getRoom());
+    dispatch(getRoom({ owner_id: user?.uid }));
 
     const interval = setInterval(() => {
-      dispatch(getRoom());
+      dispatch(getRoom({ owner_id: user?.uid }));
     }, 4000);
 
     return () => clearInterval(interval);
@@ -39,7 +42,7 @@ const Dashboard = ({ navigation }) => {
       deleteRoom({
         roomId: room_id,
         callback: () => {
-          dispatch(getRoom());
+          dispatch(getRoom({ owner_id: user?.uid }));
         },
       }),
     );
@@ -103,8 +106,8 @@ const Dashboard = ({ navigation }) => {
           paddingHorizontal: 30,
         }}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon.ArrowLeft color="#292D32" />
+        <TouchableOpacity >
+          <Icon.ArrowLeft color="" />
         </TouchableOpacity>
         <View>
           <Icon.Chat />

@@ -16,9 +16,9 @@ const initialState = {
 
 export const getRoom = createAsyncThunk(
   'dashboard/list-room',
-  async (_, { rejectWithValue }) => {
+  async ({ owner_id }, { rejectWithValue }) => {
     try {
-      const response = await request.get('rooms/list-rooms');
+      const response = await request.get(`rooms/list-rooms/${owner_id}`);
       return response.data;
     } catch (err) {
       return rejectWithValue(err.message || 'Failed to fetch room details');
@@ -57,9 +57,9 @@ export const sendMessage = createAsyncThunk(
 
 export const createRoom = createAsyncThunk(
   'dashboard/create-room',
-  async ({ roomName, callback }, { rejectWithValue }) => {
+  async ({ owner_id, roomName, callback }, { rejectWithValue }) => {
     try {
-      const response = await request.post(`rooms/create-room`, {
+      const response = await request.post(`rooms/create-room/${owner_id}`, {
         room_name: roomName
       });
       callback(response.data)
