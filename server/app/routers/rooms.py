@@ -12,15 +12,24 @@ router = APIRouter(
     tags=["Rooms"],
 )
 
-@router.post("/create-room")
-async def create_room(room_data: RoomData = Body(...)):
-    room_ref = db.collection("rooms").add({"room_name": room_data.room_name})
-    return {"room_id": room_ref[1].id, "room_name": room_data.room_name}
+@router.post("/create-room/{owner_id}")
+async def create_room(owner_id: str, room_data: RoomData = Body(...)):
+    try:
+        room_ref = db.collection("rooms").add({
+            "room_name": room_data.room_name,
+            "owner_id": owner_id 
+        })
+        return {"room_id": room_ref[1].id, "room_name": room_data.room_name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/list-rooms")
-async def list_rooms():
-    rooms = db.collection("rooms").stream()
-    return [{"room_id": room.id, **room.to_dict()} for room in rooms]
+@router.get("/list-rooms/{owner_id}")
+async def list_rooms(owner_id: str):
+    try:
+        rooms = db.collection("rooms").where("owner_id", "==", owner_id).stream()
+        return [{"room_id": room.id, **room.to_dict()} for room in rooms]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/send-message/{room_id}")
 async def send_message(room_id: str, message_data: MessageData = Body(...)):
