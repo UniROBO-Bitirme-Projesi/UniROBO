@@ -42,6 +42,7 @@ target 'UniROBO' do
   pod 'nanopb', :modular_headers => true
   pod 'GoogleSignIn', :modular_headers => true
   pod 'react-native-config/Extension', :path => '../node_modules/react-native-config'
+  pod 'RNGoogleSignin', :path => '../node_modules/@react-native-google-signin/google-signin'
 
   # Flags change depending on the env values.
   flags = get_default_flags()
