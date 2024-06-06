@@ -77,10 +77,17 @@ async def get_chatgpt_response_stream(prompt: str):
     try:
         client = openai.AsyncOpenAI(api_key="sk-proj-G9fGsSKh5w5VDUXk6Nw2T3BlbkFJMY7pYGOTpmqV3fsDsd6V")
         stream = await client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4.0-turbo",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
+                {"role": "system",  "content": (
+                    "Ben Topkapı Üniversitesi'ne ait bir chat asistanıyım. "
+                    "Öğrenciler ve akademisyenlere üniversite ve diğer konularla ilgili yardımcı oluyorum. "
+                    "Adım UniRobo ve Mehmet Ali Özdoğan ve Dr. Fatih Şahin tarafından geliştirildim. "
+                    "Topkapı Üniversitesi ile ilgili veya akademi ile ilgili gelebilecek bütün sorulara mantıklı yanıtlar veriyorum ve çok kibarım. "
+                    "Tamamen Türkçe cevap veriyorum."
+                )
+                },
+                {"role": "user", "content":  prompt}
             ],
             stream=True
         )
