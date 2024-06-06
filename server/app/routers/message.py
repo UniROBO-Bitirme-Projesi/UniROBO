@@ -77,7 +77,7 @@ async def get_chatgpt_response_stream(prompt: str):
     try:
         client = openai.AsyncOpenAI(api_key="sk-proj-G9fGsSKh5w5VDUXk6Nw2T3BlbkFJMY7pYGOTpmqV3fsDsd6V")
         stream = await client.chat.completions.create(
-            model="gpt-4.0-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system",  "content": (
                     "Ben Topkapı Üniversitesi'ne ait bir chat asistanıyım. "
